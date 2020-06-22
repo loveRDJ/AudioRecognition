@@ -24,14 +24,14 @@ def calculateEnergy(wave_data):
     energy = []
     sum = 0
     for i in range(len(wave_data)):
-        # print(wave_data[i])
-        sum += (int(wave_data[i]))*int(wave_data[i])
-        # sum += int(wave_data[i] * wave_data)
+        sum += (wave_data[i]*wave_data[i])
+        # print(sum)
         if (i+1)%256 == 0:
             energy.append(sum)
             sum = 0
         elif i == len(wave_data)-1:
             energy.append(sum)
+    # print(energy,"energy")
     return energy
 
 def calculateZCR(wave_data):
@@ -46,6 +46,7 @@ def calculateZCR(wave_data):
             sum = 0
         elif i == len(wave_data) - 1:
             zcr.append(float(sum/255))
+    # print(zcr,"zcr")
     return zcr
 
 def endPointDetect(wave_data, energy, zcr):
@@ -134,7 +135,7 @@ def get_mfcc(wav_path):
     energy = calculateEnergy(wave_data)
     zcr = calculateZCR(wave_data)
     N = endPointDetect(wave_data, energy, zcr)
-    print(N,"N")
+    print(N[0],"N")
     # fft_signal = np.fft.fft(wave_data)  # 语音信号FFT变换
     # fft_signal = abs(fft_signal)  # 取变换结果的模
     # plt.figure(figsize=(10, 4))
