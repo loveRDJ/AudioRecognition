@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 import scipy.signal as signal
 import numpy as np
 import wave
+import os
+from python_speech_features import *
+from scipy import io
 
 
 def get_ms_part_wav(main_wav_path, start_time, end_time, part_wav_path):
@@ -145,14 +148,13 @@ def validation(wav_path):
     while i < len(N):
         N[i] = N[i] * 256
         i += 1
-    print(N, "N")
-    # fft_signal = np.fft.fft(wave_data)  # 语音信号FFT变换
-    # fft_signal = abs(fft_signal)  # 取变换结果的模
-    # # plt.figure(figsize=(10, 4))
-    # time = np.arange(0, nframes) * framerate / nframes
-    # plt.plot(time, fft_signal, c="g")
-    # plt.grid()
-    # plt.show()
+    fft_signal = np.fft.fft(wave_data)  # 语音信号FFT变换
+    fft_signal = abs(fft_signal)  # 取变换结果的模
+    # plt.figure(figsize=(10, 4))
+    time = np.arange(0, nframes) * framerate / nframes
+    plt.plot(time, fft_signal, c="g")
+    plt.grid()
+    plt.show()
     return N
 
 
@@ -161,11 +163,20 @@ def get_mfcc(wav_path):
     return mfcc(audio, rate)
 
 
-if __name__ == "__main__":
-    N = validation('../audio(single)/1_1.wav')
+def getFeatures(wav_path):
+    N = validation(wav_path)
     N = sorted(N)
-    get_ms_part_wav('../audio(single)/1_1.wav', N[0], N[-1], '../Test_data/1_1.wav')
-    orig1 = get_mfcc('../Test_data/1_1.wav')
-    print(orig1.shape)
-    plt.plot(orig1)
+    print(N, "N")
+    # print(wav_path.split('/')[-1])
+    get_ms_part_wav(wav_path, N[0], N[-1], '../Test_data/{}'.format(wav_path.split('/')[-1]))
+    orig1 = get_mfcc('../Test_data/{}'.format(wav_path.split('/')[-1]))
+    return orig1
+
+
+if __name__ == "__main__":
+    files = os.listdir('../audio(single)')
+    feature0 = getFeatures('../audio(single)/{}'.format('1_1.wav'))
+
+    print(feature0.shape)
+    plt.plot(feature0)
     plt.show()
