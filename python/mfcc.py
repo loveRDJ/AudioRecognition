@@ -7,12 +7,13 @@ import numpy as np
 import wave
 
 
-# def get_ms_part_wav(main_wav_path, start_time, end_time, part_wav_path):
-#     start_time = int(start_time)
-#     end_time = int(end_time)
-#     sound = AudioSegment.from_wav(main_wav_path)
-#     output = sound[start_time: end_time]
-#     output.export(part_wav_path, format="wav")
+def get_ms_part_wav(main_wav_path, start_time, end_time, part_wav_path):
+    start_time = int(start_time)
+    end_time = int(end_time)
+    sound = AudioSegment.from_wav(main_wav_path)
+    output = sound[start_time: end_time]
+    output.export(part_wav_path, format="wav")
+
 
 def sgn(data):
     if data >= 0:
@@ -20,53 +21,56 @@ def sgn(data):
     else:
         return 0
 
+
 def calculateEnergy(wave_data):
     energy = []
     sum = 0
     for i in range(len(wave_data)):
-        sum += (wave_data[i]*wave_data[i])
+        sum += (wave_data[i] * wave_data[i])
         # print(sum)
-        if (i+1)%256 == 0:
+        if (i + 1) % 256 == 0:
             energy.append(sum)
             sum = 0
-        elif i == len(wave_data)-1:
+        elif i == len(wave_data) - 1:
             energy.append(sum)
     # print(energy,"energy")
     return energy
+
 
 def calculateZCR(wave_data):
     zcr = []
     sum = 0
     for i in range(len(wave_data)):
-        if i%256 == 0:
+        if i % 256 == 0:
             continue
-        sum += np.abs(sgn(wave_data[i]) - sgn(wave_data[i-1]))
-        if(i+1)%256 == 0:
-            zcr.append(float(sum/255))
+        sum += np.abs(sgn(wave_data[i]) - sgn(wave_data[i - 1]))
+        if (i + 1) % 256 == 0:
+            zcr.append(float(sum / 255))
             sum = 0
         elif i == len(wave_data) - 1:
-            zcr.append(float(sum/255))
+            zcr.append(float(sum / 255))
     # print(zcr,"zcr")
     return zcr
+
 
 def endPointDetect(wave_data, energy, zcr):
     sum = 0
     avgEnergy = 0
     for e in energy:
         sum += e
-    avgEnergy = sum/len(energy)
+    avgEnergy = sum / len(energy)
 
     sum = 0
     for e in energy[:5]:
         sum += e
-    ML = sum/5
-    MH = avgEnergy/4
-    ML = (ML+MH)/4
+    ML = sum / 5
+    MH = avgEnergy / 2
+    ML = (ML + MH) / 2
 
     sum = 0
     for z in zcr[:5]:
-        sum += float(sum+z)
-    Zs = sum/5
+        sum += float(sum + z)
+    Zs = sum / 5
 
     A = []
     B = []
@@ -74,47 +78,49 @@ def endPointDetect(wave_data, energy, zcr):
 
     flag = 0
     for i in range(len(energy)):
-        if len(A) == 0 and flag == 0 and energy[i]>MH:
+        if len(A) == 0 and flag == 0 and energy[i] > MH:
             A.append(i)
             flag = 1
-        elif flag == 0 and energy[i]>MH and i-21>A[len(A)-1]:
+        elif flag == 0 and energy[i] > MH and i - 20 > A[len(A) - 1]:
             A.append(i)
             flag = 1
-        elif flag == 0 and energy[i]>MH and i-21<=A[len(A)-1]:
-            A = A[:len(A)-1]
+        elif flag == 0 and energy[i] > MH and i - 20 <= A[len(A) - 1]:
+            A = A[:len(A) - 1]
             flag = 1
 
-        if flag == 1 and energy[i]<MH:
+        if flag == 1 and energy[i] < MH:
             A.append(i)
             flag = 0
 
     for j in range(len(A)):
         i = A[j]
-        if j%2 ==1:
-            while i< len(energy) and energy[i]>ML:
+        if j % 2 == 1:
+            while i < len(energy) and energy[i] > ML:
                 i += 1
             B.append(i)
         else:
-            while i>0 and energy[i]>ML:
+            while i > 0 and energy[i] > ML:
                 i -= 1
             B.append(i)
 
     for j in range(len(B)):
         i = B[j]
-        if j%2 == 1:
-            while i<len(zcr) and zcr[i]>=3*Zs:
+        if j % 2 == 1:
+            while i < len(zcr) and zcr[i] >= 3 * Zs:
                 i += 1
             C.append(i)
         else:
-            while i>0 and zcr[i]>=3*Zs:
+            while i > 0 and zcr[i] >= 3 * Zs:
                 i -= 1
             C.append(i)
 
+    # print(A,"A")
+    # print(B,"B")
+    # print(C,"C")
     return C
 
 
-def get_mfcc(wav_path):
-    rate, audio = wav.read(wav_path)
+def validation(wav_path):
     # 语音有效段检测-短时平均过零率
     f = wave.open(wav_path, "rb")
     params = f.getparams()
@@ -135,21 +141,31 @@ def get_mfcc(wav_path):
     energy = calculateEnergy(wave_data)
     zcr = calculateZCR(wave_data)
     N = endPointDetect(wave_data, energy, zcr)
-    print(N[0],"N")
+    i = 0
+    while i < len(N):
+        N[i] = N[i] * 256
+        i += 1
+    print(N, "N")
     # fft_signal = np.fft.fft(wave_data)  # 语音信号FFT变换
     # fft_signal = abs(fft_signal)  # 取变换结果的模
-    # plt.figure(figsize=(10, 4))
+    # # plt.figure(figsize=(10, 4))
     # time = np.arange(0, nframes) * framerate / nframes
     # plt.plot(time, fft_signal, c="g")
     # plt.grid()
     # plt.show()
+    return N
 
+
+def get_mfcc(wav_path):
+    rate, audio = wav.read(wav_path)
     return mfcc(audio, rate)
 
 
 if __name__ == "__main__":
-    # get_ms_part_wav('VR.mp3', 1000, 6000, 'Test_data/VR.wav')
-    orig1 = get_mfcc('1.wav')
+    N = validation('../audio(single)/1_1.wav')
+    N = sorted(N)
+    get_ms_part_wav('../audio(single)/1_1.wav', N[0], N[-1], '../Test_data/1_1.wav')
+    orig1 = get_mfcc('../Test_data/1_1.wav')
     print(orig1.shape)
-    # plt.plot(orig1)
-    # plt.show()
+    plt.plot(orig1)
+    plt.show()
