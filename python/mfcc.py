@@ -166,8 +166,10 @@ def get_mfcc(wav_path):
 def getFeatures(wav_path):
     N = validation(wav_path)
     N = sorted(N)
-    print(N, "N")
     # print(wav_path.split('/')[-1])
+    if N[0]>5000:
+        N[0] = 5000
+    print(N, "N")
     get_ms_part_wav(wav_path, N[0], N[-1], '../Test_data/{}'.format(wav_path.split('/')[-1]))
     orig1 = get_mfcc('../Test_data/{}'.format(wav_path.split('/')[-1]))
     return orig1
@@ -175,7 +177,10 @@ def getFeatures(wav_path):
 
 if __name__ == "__main__":
     files = os.listdir('../audio(single)')
-    feature0 = getFeatures('../audio(single)/{}'.format('1_1.wav'))
+    files.remove('.DS_Store')
+    for f in files:
+        print(f)
+        feature0 = getFeatures('../audio(single)/{}'.format(f))
 
     print(feature0.shape)
     plt.plot(feature0)
